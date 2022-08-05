@@ -1,6 +1,5 @@
 <footer>
-    &copy; KD
-    <div class="box">
+    <div class="box  list-color">
         <form class="item" action="/" method="post">
             <input 
                 type="text" 
@@ -19,7 +18,7 @@
     </div>
     <div class="box">
         <% if (listLink !== '') { %>
-            <div class="item">
+            <div class="item list-menu-color">
                 <a href="/">
                     <p>
                         Hauptliste
@@ -29,7 +28,7 @@
         <% } %>
         <% lists.forEach((list) => { %>
             <form action="/delete-list" method="post">
-                <div class="item">
+                <div class="item list-menu-color">
                     <input 
                         type="checkbox" 
                         value="<%= list._id %>" 

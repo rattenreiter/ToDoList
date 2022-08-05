@@ -29,6 +29,14 @@ html {
     align-items: center;
     border-bottom: 1px solid #F1F1F1;
   }
+
+  .list-color {
+    background-color: rgba(0,0,255,0.1);
+  }
+
+  .list-menu-color {
+    background-color: rgba(255,0,0,0.1);
+  }
   
   input:checked+p {
     text-decoration: line-through;
