@@ -1,5 +1,51 @@
 <footer>
     &copy; KD
+    <div class="box">
+        <form class="item" action="/" method="post">
+            <input 
+                type="text" 
+                name="newList" 
+                placeholder="New List" 
+                autocomplete="off"
+            >
+            <button 
+                type="submit" 
+                name="newListButton" 
+                value="<%= listTitle %>"
+            >
+                +
+            </button>
+        </form>
+    </div>
+    <div class="box">
+        <% if (listLink !== '') { %>
+            <div class="item">
+                <a href="/">
+                    <p>
+                        Hauptliste
+                    </p>
+                </a>
+            </div>
+        <% } %>
+        <% lists.forEach((list) => { %>
+            <form action="/delete-list" method="post">
+                <div class="item">
+                    <input 
+                        type="checkbox" 
+                        value="<%= list._id %>" 
+                        name="doneList" 
+                        onChange="this.form.submit()"
+                    >   
+                    <a href="<%= list.listLink %>">
+                        <p>
+                            <%= list.listLink %>
+                        </p>
+                    </a>
+                </div>
+            </form>
+        <% }); %>
+    </div>
+    </div>
 </footer>
 </body>
 </html>

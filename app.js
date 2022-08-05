@@ -12,42 +12,80 @@ app.set('view engine', 'ejs');
 
 let listItems = [];
 let workListItems = [];
+let newListName ='';
 let ejsObject = {
     listTitle: '',
-    items: []
+    items: [],
+    listLink: '',
+    lists: []
 };
 
 // MONGOOSE SETUP
 // --------------------------------------------------------
 mongoose.connect('mongodb://localhost:27017/ToDoList_DB');
-const listSchema = {
-  _id: {
-    type: Number,
-    required: [true, 'ID should be given automatically as timeStamp at time of creation']
-  },
-  listItem: {
-    type: String,
-    required: [true, 'List Item should be inserted']
-  },
-};
+const itemSchema = new mongoose.Schema({
+  _id: Number,
+  listItem: String,
+});
 
+const listSchema = new mongoose.Schema({
+    _id: {
+      type: Number,
+      required: [true, 'ID should be given automatically as timeStamp at time of creation']
+    },
+    listName: {
+        type: String,
+        required: [true,'']
+    },
+    listItems: [itemSchema],
+    listLink: String
+  });
+
+const Item = mongoose.model('Item', itemSchema);
 const List = mongoose.model('List', listSchema);
-const WorkList = mongoose.model('Worklist', listSchema);
 
 app.get("/", (req, res) => {
-    List.find({}, (err, foundItems) => {
+    Item.find({}, (err, foundItems) => {
         ejsObject.listTitle = date.getDate();
         ejsObject.items = foundItems;
+        ejsObject.listLink = '';
+        List.find({}, (err, foundLists) => {
+            ejsObject.lists = foundLists;
+        });
         res.render('list', ejsObject);
     });    
 });
 
-app.get("/work", (req, res) => {
-    WorkList.find({}, (err, foundWorkItems) => {
-        ejsObject.listTitle = date.getDate()+'<br>Arbeitsliste';
-        ejsObject.items = foundWorkItems;
-        res.render('list', ejsObject);
-    });   
+app.get("/:customListName", (req, res) => {
+    const customList = req.params.customListName;
+    List.findOne({listName: customList}, (err, foundList) => {
+        if (!err) {
+            if (!foundList) {
+                const list = new List({
+                    _id: Date.now(),
+                    listName: customList,
+                    listLink: customList
+                });
+                list.save();
+                res.redirect("/" + customList);
+            } else {
+                ejsObject.listTitle = date.getDate();
+                ejsObject.listTitle += '<br>' + foundList.listName.toLocaleUpperCase();
+                ejsObject.items = foundList.listItems;
+                ejsObject.listLink = foundList.listName;
+                List.find({}, (err, foundLists) => {
+                    ejsObject.lists = foundLists;
+                });
+                res.render("list", ejsObject);
+            }
+        }
+    });
+    const list = new List({
+        _id: Date.now(),
+        listName: customList,
+    });
+    
+
 });
 
 app.get("/about", (req, res) => {
@@ -56,36 +94,81 @@ app.get("/about", (req, res) => {
 
 app.post("/", (req, res) => {
 
-    if (req.body.listButton.includes('Arbeitsliste')) {
-        const item = new WorkList(
-            {
-                _id: Date.now(),
-                listItem: req.body.newItem
+        const itemName = req.body.newItem;
+        const listName = req.body.listButton;
+        const newList = req.body.newList;
+        const newListButton = req.body.newListButton;
+
+        if (newList) {
+            res.redirect('/' + newList);
+        } else if (newListButton && !newList) {
+            res.redirect('/');
+        } else {
+            if (itemName) {
+                console.log(itemName, listName, newList, newListButton);
+
+                const item = new Item({
+                    _id: Date.now(),
+                    listItem: itemName
+                });
+
+                if (listName === '') {
+                    item.save();
+                    res.redirect('/');
+                } else {
+                    List.findOne({listName: listName}, (err, foundList) => {
+                        if (!err) {
+                            foundList.listItems.push(item);
+                            foundList.save();
+                        }
+                    });
+                    
+                } 
             }
-        );
-        WorkList.create(item);
-        res.redirect("/work");
-    } else {
-        const item = new List(
-            {
-                _id: Date.now(),
-                listItem: req.body.newItem
-            }
-        );
-        List.create(item);
-        res.redirect("/");
-    }
+            res.redirect('/' + listName);
+        }
+   
+    
+    
 });
 
 app.post('/delete', (req, res) => {
-    List.findByIdAndRemove(req.body.doneItem, (err) => {
-        if (err) {
-            console.log(err);
-        } 
-    });
-    res.redirect('/');
+    const listName = req.body.listName;
+
+    if (listName === '') {
+        Item.findByIdAndRemove(req.body.doneItem, (err) => {
+            if (err) {
+                console.log(err);
+            } else {
+                res.redirect('/');
+            }
+        }); 
+    } else {
+        List.findOneAndUpdate({listName: listName}, {
+            $pull: {
+                listItems: {
+                    _id: req.body.doneItem
+                }
+            }
+        }, (err, foundList) => {
+            if (!err) {
+                res.redirect('/' + listName)
+            }
+        });
+    }        
 });
 
-app.listen(3000, () => {
+app.post('/delete-list', (req, res) => {
+    const listName = req.body.listName;
+    const listDeleteButton = req.body.doneList;
+
+    List.findByIdAndRemove(listDeleteButton, (err) => {
+        if (!err) {
+            res.redirect('/');
+        }
+    });
+});
+
+app.listen(process.env.PORT || 3000, () => {
   console.log('Server listens on Port 3000');
 });
