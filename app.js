@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const ejs = require('ejs');
 const mongoose = require('mongoose');
+const _ = require('lodash');
 const date = require(__dirname + '/date.js');
 const app = express();
 
@@ -57,7 +58,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/:customListName", (req, res) => {
-    const customList = req.params.customListName;
+    const customList = _.capitalize(req.params.customListName);
     List.findOne({listName: customList}, (err, foundList) => {
         if (!err) {
             if (!foundList) {
@@ -70,7 +71,7 @@ app.get("/:customListName", (req, res) => {
                 res.redirect("/" + customList);
             } else {
                 ejsObject.listTitle = date.getDate();
-                ejsObject.listTitle += '<br>' + foundList.listName.toLocaleUpperCase();
+                ejsObject.listTitle += '<br>' + foundList.listName;
                 ejsObject.items = foundList.listItems;
                 ejsObject.listLink = foundList.listName;
                 List.find({}, (err, foundLists) => {
@@ -105,8 +106,6 @@ app.post("/", (req, res) => {
             res.redirect('/');
         } else {
             if (itemName) {
-                console.log(itemName, listName, newList, newListButton);
-
                 const item = new Item({
                     _id: Date.now(),
                     listItem: itemName
